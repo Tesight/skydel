@@ -1,0 +1,39 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "nuitka build commands",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/Scripts/nuitka",
+            "args": [
+                "--module",
+                "--mingw64",
+                "--clang",
+                "src/skydel/skydelsdx/commands.py",
+                "--output-dir=build",
+                "--nofollow-imports",
+                "--include-module=skydel.skydelsdx.commands",
+                "--verbose"
+            ],
+            "options": {
+                "env": {
+                    "PYTHONPATH": "${workspaceFolder}/src"
+                }
+            },
+        },
+        {
+            "label": "pdm build",
+            "type": "shell",
+            "command": "pdm",
+            "args": [
+                "build",
+                "--verbose"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+        }
+    ]
+}

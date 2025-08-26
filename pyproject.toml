@@ -1,0 +1,17 @@
+[project]
+name = "skydel"
+version = "25.4.0"
+description = "Python module to interface with the Skydel GNSS simulator"
+authors = [
+    {name = "Tesight", email = "hktest@tesight.com"},
+]
+requires-python = ">=3.7"
+readme = "README.md"
+license = {text = "LGPL-2.1"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+distribution = true
