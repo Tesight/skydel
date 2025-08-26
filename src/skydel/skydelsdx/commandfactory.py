@@ -8,10 +8,10 @@ class Empty:
   pass
 
 def classFromName(className):
-  return getattr(getattr(__import__("skydelsdx"), "commands"), className)
+  return getattr(getattr(getattr(__import__("skydel"), "skydelsdx"), "commands"), className)
 
 def targetClassFromName(className, targetId):
-  attribute = getattr(__import__("skydelsdx"), "plugins")
+  attribute = getattr(getattr(__import__("skydel"), "skydelsdx"), "plugins")
   for module in targetId.split("."):
     attribute = getattr(attribute, module)
   return getattr(getattr(attribute, "commands"), className)
