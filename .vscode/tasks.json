@@ -29,6 +29,7 @@
             "command": "pdm",
             "args": [
                 "build",
+                "--no-sdist",
                 "--verbose"
             ],
             "options": {
