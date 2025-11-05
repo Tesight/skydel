@@ -1,0 +1,128 @@
+name: Build Skydel commands
+
+on:
+  workflow_dispatch:
+    inputs:
+      python_version:
+        description: "Python version to build for"
+        required: true
+        type: choice
+        options:
+          - "All"
+          - "3.10"
+          - "3.13"
+        default: "All"
+
+      os:
+        description: "Operating system to build on"
+        required: true
+        type: choice
+        options:
+          - "All"
+          - "ubuntu-latest"
+          - "windows-latest"
+        default: "All"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Setup matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix_config: ${{ steps.prep-matrix.outputs.matrix_config }}
+    steps:
+      - name: Prepare matrix configuration
+        id: prep-matrix
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.python_version }}" = "All" ]; then
+            PYTHON_VERSIONS='["3.10", "3.13"]'
+          else
+            PYTHON_VERSIONS='["${{ github.event.inputs.python_version }}"]'
+          fi
+
+          if [ "${{ github.event.inputs.os }}" = "All" ]; then
+            OS_LIST='["ubuntu-latest", "windows-latest"]'
+          else
+            OS_LIST='["${{ github.event.inputs.os }}"]'
+          fi
+
+          MATRIX_CONFIG="{\"python-version\": $PYTHON_VERSIONS, \"os\": $OS_LIST}"
+          echo "matrix_config=$MATRIX_CONFIG" >> "$GITHUB_OUTPUT"
+          echo "Generated matrix: $MATRIX_CONFIG"
+
+  run-build:
+    needs: build
+    name: Build ${{ matrix.os }} (Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build.outputs.matrix_config) }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      - name: Install dependencies with PDM
+        run: pdm install
+
+      - name: Prepare Nuitka arguments (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        id: build-args-linux
+        shell: bash
+        run: |
+          base_args=(
+            "--module"
+            "${{ github.workspace }}/src/skydel/skydelsdx/commands.py"
+            "--output-dir=build/py${{ matrix.python_version }}-${{ matrix.os }}"
+            "--nofollow-imports"
+            "--include-module=skydel.skydelsdx.commands"
+            "--verbose"
+            "--clang"
+          )
+
+          echo "args=${base_args[*]}" >> "$GITHUB_OUTPUT"
+          echo "Nuitka args: ${base_args[*]}"
+          echo "BUILD_ARGS_ID=build-args-linux" >> "$GITHUB_ENV"
+
+      - name: Prepare Nuitka arguments (Windows)
+        if: matrix.os == 'windows-latest'
+        id: build-args-windows
+        shell: pwsh
+        run: |
+          $base_args = @(
+            "--module",
+            "${{ github.workspace }}/src/skydel/skydelsdx/commands.py",
+            "--output-dir=build/py${{ matrix.python_version }}-${{ matrix.os }}",
+            "--nofollow-imports",
+            "--include-module=skydel.skydelsdx.commands",
+            "--verbose",
+            "--clang"
+          )
+
+          echo "args=$($base_args -join ' ')" >> $env:GITHUB_OUTPUT
+          Write-Host "Nuitka args: $($base_args -join ' ')"
+          echo "BUILD_ARGS_ID=build-args-windows" >> $env:GITHUB_ENV
+
+      - name: Run Nuitka build
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+        run: pdm run nuitka ${{ steps[env.BUILD_ARGS_ID].outputs.args }}
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuitka-build-py${{ matrix.python-version }}-${{ matrix.os }}
+          path: |
+            ${{ steps[env.BUILD_ARGS_ID].outputs.output_dir }}/**/*.pyd
+            ${{ steps[env.BUILD_ARGS_ID].output_dir }}/**/*.so
+          retention-days: 30
