@@ -1,58 +1,64 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "2.0.0",
+    "inputs": [
+        {
+            "id": "pythonEnv",
+            "type": "pickString",
+            "description": "Select Python environment",
+            "options": [
+                "venv310",
+                "venv313",
+                "All"
+            ],
+            "default": "All"
+        }
+    ],
     "tasks": [
         {
-            "label": "nuitka build commands (Windows)",
+            "label": "nuitka build",
             "type": "shell",
-            "command": "${workspaceFolder}/venv/Scripts/nuitka",
+            "command": "echo unsupported platform && exit 1",
             "args": [
-                "--module",
+                "--mode=module",
                 "--clang",
                 "${workspaceFolder}/src/skydel/skydelsdx/commands.py",
                 "--output-dir=build",
+                "--output-folder-name=${input:pythonEnv}_${os}",
                 "--nofollow-imports",
-                "--include-module=skydel.skydelsdx.commands",
-                "--verbose"
+                "--no-pyi-file",
+                "--no-pyi-stubs",
             ],
             "options": {
                 "env": {
                     "PYTHONPATH": "${workspaceFolder}/src"
                 }
             },
+            "linux": {
+                "command": "${workspaceFolder}/${input:pythonEnv}/bin/nuitka"
+            },
+            "windows": {
+                "command": "${workspaceFolder}/${input:pythonEnv}/Scripts/nuitka"
+            },
+            "problemMatcher": []
         },
         {
-            "label": "nuitka build commands (Linux)",
+            "label": "nuitka build all",
             "type": "shell",
-            "command": "${workspaceFolder}/venv/bin/nuitka",
-            "args": [
-                "--module",
-                "--clang",
-                "${workspaceFolder}/src/skydel/skydelsdx/commands.py",
-                "--output-dir=build",
-                "--nofollow-imports",
-                "--include-module=skydel.skydelsdx.commands",
-                "--verbose"
-            ],
-            "options": {
-                "env": {
-                    "PYTHONPATH": "${workspaceFolder}/src"
+            "dependsOn": [
+                {
+                    "task": "nuitka build",
+                    "condition": "${input:pythonEnv} == 'venv310' || ${input:pythonEnv} == 'All'"
+                },
+                {
+                    "task": "nuitka build",
+                    "condition": "${input:pythonEnv} == 'venv313' || ${input:pythonEnv} == 'All'"
                 }
-            },
-        },
-        {
-            "label": "pdm build",
-            "type": "shell",
-            "command": "pdm",
-            "args": [
-                "build",
-                "--no-sdist",
-                "--verbose"
             ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
+            "command": "echo",
+            "args": [
+                "Successfully build on current platform with all Python versions."
+            ],
+            "problemMatcher": []
         }
     ]
 }
