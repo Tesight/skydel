@@ -1,0 +1,35 @@
+name: Run pyest action
+
+on: push
+
+jobs:
+  testing:
+    name: Testing
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+      statuses: write
+      checks: write
+      actions: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: pdm-project/setup-pdm@v3
+
+      - name: Install Dependencies
+        run: |
+          pdm add pip
+          pdm install
+
+      - name: Run Tests
+        run: pdm run pytest -s -rfsp --junit-xml=test-results.xml --tb=auto
+
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Tests Report
+          path: ./*.xml
+          reporter: java-junit
