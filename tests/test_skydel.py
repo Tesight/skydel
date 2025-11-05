@@ -10,7 +10,7 @@ import pytest
 def manage_skydel_package():
     try:
         install_result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", Path(__file__).parent.parent],
+            [sys.executable, "-m", "pip", "install", Path(__file__).parent.parent.as_posix()],
             capture_output=True,
             text=True,
             check=True,
