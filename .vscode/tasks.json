@@ -4,14 +4,32 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "nuitka build commands",
+            "label": "nuitka build commands (Windows)",
             "type": "shell",
             "command": "${workspaceFolder}/venv/Scripts/nuitka",
             "args": [
                 "--module",
-                "--mingw64",
                 "--clang",
-                "src/skydel/skydelsdx/commands.py",
+                "${workspaceFolder}/src/skydel/skydelsdx/commands.py",
+                "--output-dir=build",
+                "--nofollow-imports",
+                "--include-module=skydel.skydelsdx.commands",
+                "--verbose"
+            ],
+            "options": {
+                "env": {
+                    "PYTHONPATH": "${workspaceFolder}/src"
+                }
+            },
+        },
+        {
+            "label": "nuitka build commands (Linux)",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/nuitka",
+            "args": [
+                "--module",
+                "--clang",
+                "${workspaceFolder}/src/skydel/skydelsdx/commands.py",
                 "--output-dir=build",
                 "--nofollow-imports",
                 "--include-module=skydel.skydelsdx.commands",
